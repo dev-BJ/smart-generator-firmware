@@ -1,0 +1,38 @@
+Processing esp32dev (platform: espressif32; board: esp32dev; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/esp32dev.html
+PLATFORM: Espressif 32 (55.3.311) > Espressif ESP32 Dev Module
+HARDWARE: ESP32 240MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-prog, esp-prog-2, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - contrib-piohome @ 3.4.4 
+ - framework-arduinoespressif32 @ 3.3.11 
+ - framework-arduinoespressif32-libs @ 5.5.5+sha.b774170ff46 
+ - tool-esptoolpy @ 5.3.0 
+ - tool-xtensa-esp-elf-gdb @ 17.1.0+20260402 
+ - toolchain-xtensa-esp-elf @ 14.2.0+20260121
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 49 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- RTClib @ 2.1.4
+|-- LiquidCrystal_I2C @ 1.1.4
+|-- Adafruit BusIO @ 1.17.4
+|-- ESP32Servo @ 3.2.1
+|-- Preferences @ 3.3.11
+|-- SD @ 3.3.11
+|-- SPI @ 3.3.11
+|-- Wire @ 3.3.11
+Building in release mode
+Linking .pio/build/esp32dev/firmware.elf
+/home/phreaker/.platformio/packages/toolchain-xtensa-esp-elf/bin/../lib/gcc/xtensa-esp-elf/14.2.0/../../../../xtensa-esp-elf/bin/ld: .pio/build/esp32dev/src/modules/gsm_handler.cpp.o:(.literal._Z10processSms6StringS_S_+0x58): undefined reference to `lastFuelLiters'
+collect2: error: ld returned 1 exit status
+*** [.pio/build/esp32dev/firmware.elf] Error 1
+========================== [FAILED] Took 9.11 seconds ==========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+esp32dev       FAILED    00:00:09.113
+==================== 1 failed, 0 succeeded in 00:00:09.113 ====================
