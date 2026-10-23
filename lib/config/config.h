@@ -88,7 +88,7 @@
 #define FUEL_TANK_CAPACITY_L       6.0f   // Tank capacity in liters
 #define FUEL_EMPTY_DIST_CM         5.50f   // Sensor distance when empty
 #define FUEL_FULL_DIST_CM          1.0f    // Sensor distance when full
-#define FUEL_LOW_THRESHOLD_PCT     30      // Low fuel warning (%)
+#define FUEL_LOW_THRESHOLD_PCT     20      // Low fuel warning (%)
 #define FUEL_CRITICAL_THRESHOLD_PCT 10     // Critical fuel warning (%)
 #define FUEL_SHUTDOWN_THRESHOLD_PCT 7      // Auto shutdown (%)
 

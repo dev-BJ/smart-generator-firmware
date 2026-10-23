@@ -41,9 +41,9 @@ float filterFuel(float newVal) {
 
 void updateFuelPercent() {
   float dist = measureDistance();
-  Serial.print("Measured distance: ");
-  Serial.print(dist);
-  Serial.println(" cm");
+  // Serial.print("Measured distance: ");
+  // Serial.print(dist);
+  // Serial.println(" cm");
   if (dist >= 0) {
     float rawPct = calcFuelPercent(dist);
     if (rawPct >= 0) {
@@ -86,7 +86,8 @@ void updateFuelAlerts(String registeredPhone) {
     beepBuzzer(2, 500);
   } else if (currentFuelPercent > FUEL_LOW_THRESHOLD_PCT) {
     fuelLowAlertSent = false;
-    if (!fuelCriticalAlertSent) digitalWrite(PIN_LED_LOW_FUEL, LOW);
+    // if (!fuelCriticalAlertSent)
+    digitalWrite(PIN_LED_LOW_FUEL, LOW);
   }
 }
 

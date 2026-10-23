@@ -36,6 +36,10 @@ void updateGeneratorState(GenState newState) {
 void updateGeneratorControl(GenState* state, bool mainsPresent, bool genVoltagePresent, String registeredPhone, float mainsVoltage, float genVoltage) {
   *state = genState;
 
+  if (genVoltagePresent && genState != GEN_RUNNING) {
+    genState = GEN_RUNNING;
+  }
+
   switch (genState) {
     case GEN_OFF:
       digitalWrite(PIN_RELAY_GEN, RELAY_OFF);
@@ -95,12 +99,17 @@ void updateGeneratorControl(GenState* state, bool mainsPresent, bool genVoltageP
       }
 
       if (!genVoltagePresent) {
-        genState = GEN_STOPPING;
-        genStopTime = millis();
+        // delay for a short period to allow for transient voltage drops
+        Serial.println("Generator voltage lost, waiting for " + String(GEN_STOP_DELAY_MS) + " ms before stopping generator");
+        if (millis() - genStartTime > GEN_STARTUP_TIMEOUT_MS) {
+          genState = GEN_STOPPING;
+          genStopTime = millis();
+        }
       }
       break;
 
     case GEN_STOPPING:
+      bool wasGenOn = genVoltagePresent;
       digitalWrite(PIN_RELAY_GEN, RELAY_OFF);
       digitalWrite(PIN_RELAY_LOAD, RELAY_OFF);
       if(isChoked) {
@@ -109,9 +118,10 @@ void updateGeneratorControl(GenState* state, bool mainsPresent, bool genVoltageP
       }
 
       if (millis() - genStopTime > GEN_STOP_DELAY_MS) {
-        if (!genVoltagePresent) {
+        if (!wasGenOn) {
           genState = GEN_OFF;
           genStartTime = 0;
+          lastFuelLiters = getFuelLiters();
           sendSms(registeredPhone, "Gen: " + String(genVoltage, 0) + "V Mains: " + String(mainsVoltage, 0) + "V Date/Time: " + getDateTimeStr() + " Fuel level: " + String((int)getFuelPercent()) + "% \r\n Generator was stopped because there is no power from the generator.");
         } else {
           genStopTime = millis();

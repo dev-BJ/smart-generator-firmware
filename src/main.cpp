@@ -42,6 +42,7 @@ unsigned long genStartTime = 0;
 String registeredPhone = "";
 static void gsm_task(void* pvParameters);
 static bool isGsmReady = false;
+static bool thereWasMains = false;
 
 String getDateTimeStr() {
   DateTime now = rtc.now();
@@ -120,7 +121,8 @@ void setup() {
   }
   if (rtc.lostPower()) {
     Serial.println("RTC lost power, setting compile time");
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    rtc.adjust(DateTime(2026, 10, 19, 20, 46, 0));
   }
 
   initStorage();
@@ -152,7 +154,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       gsm_task,
       "GsmTask",
-      80000,
+      8192,
       NULL,
       1,
       NULL,
@@ -172,6 +174,16 @@ void loop() {
   if (now - lastSensorRead >= SENSOR_READ_MS) {
     readSensors();
     lastSensorRead = now;
+  }
+
+  if (thereWasMains && !mainsPresent) {
+    // Mains power was present but is now lost
+    sendSms(registeredPhone, "Gen: " + String(genVoltage, 0) + "V Mains: " + String(mainsVoltage, 0) + "V Date/Time: " + getDateTimeStr() + " Fuel level: " + String((int)getFuelPercent()) + "% \r\n Mains power lost. Generator will start if needed.");
+    thereWasMains = false;
+  } else if (!thereWasMains && mainsPresent) {
+    // Mains power was lost but is now restored
+    sendSms(registeredPhone, "Gen: " + String(genVoltage, 0) + "V Mains: " + String(mainsVoltage, 0) + "V Date/Time: " + getDateTimeStr() + " Fuel level: " + String((int)getFuelPercent()) + "% \r\n Mains power restored. Generator will stop if running.");
+    thereWasMains = true;
   }
 
   checkDayRollover(lastDay, genRuntimeDaily, fuelConsumedDaily);

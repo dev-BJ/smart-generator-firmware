@@ -42,6 +42,7 @@ struct QueuedSms {
 static QueueHandle_t smsQueue = nullptr;
 static SemaphoreHandle_t smsQueueMutex = nullptr;
 static SemaphoreHandle_t modemMutex = nullptr;
+static TaskHandle_t smsTaskHandle = nullptr;
 static bool smsWorkerStarted = false;
 
 static void triggerSmsLed();
@@ -118,6 +119,7 @@ static bool enqueueQueuedSms(const String& phone, const String& msg) {
     enqueued = xQueueSend(smsQueue, &queued, 0) == pdPASS;
   }
   xSemaphoreGive(smsQueueMutex);
+  if (enqueued && smsTaskHandle) xTaskNotifyGive(smsTaskHandle);
   return enqueued;
 }
 
@@ -138,7 +140,7 @@ bool initSmsWorker() {
     return false;
   }
 
-  if (xTaskCreatePinnedToCore(smsTask, "SmsTask", 8192, nullptr, 1, nullptr, 0) != pdPASS) {
+  if (xTaskCreatePinnedToCore(smsTask, "SmsTask", 8192, nullptr, 2, &smsTaskHandle, 0) != pdPASS) {
     Serial.println("SMS worker initialization failed: could not create task");
     vQueueDelete(smsQueue);
     vSemaphoreDelete(smsQueueMutex);
@@ -158,25 +160,32 @@ static void smsTask(void* pvParameters) {
   QueuedSms queued;
 
   for (;;) {
-    if (xQueueReceive(smsQueue, &queued, portMAX_DELAY) != pdPASS) continue;
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    bool sent = false;
-    {
-      ModemGuard modemGuard;
-      if (modemGuard.locked() && ensureModemReadyForSms()) {
-        Serial.print("Sending SMS to ");
-        Serial.println(queued.phone);
-        sent = modem.sendSMS(queued.phone, queued.msg);
+    while (xSemaphoreTake(smsQueueMutex, portMAX_DELAY) == pdTRUE) {
+      const bool hasQueuedSms = xQueueReceive(smsQueue, &queued, 0) == pdPASS;
+      xSemaphoreGive(smsQueueMutex);
+      if (!hasQueuedSms) break;
+
+      bool sent = false;
+      {
+        ModemGuard modemGuard;
+        if (modemGuard.locked() && ensureModemReadyForSms()) {
+          Serial.print("Sending SMS to ");
+          Serial.println(queued.phone);
+          sent = modem.sendSMS(queued.phone, queued.msg);
+        }
       }
-    }
 
-    if (sent) {
-      triggerSmsLed();
-      Serial.println(String("SMS sent successfully to ") + queued.phone);
-    } else {
-      Serial.println("SMS send failed; queued for retry");
-      enqueueQueuedSms(String(queued.phone), String(queued.msg));
-      vTaskDelay(pdMS_TO_TICKS(1000));
+      if (sent) {
+        triggerSmsLed();
+        Serial.println(String("SMS sent successfully to ") + queued.phone);
+      } else {
+        Serial.println("SMS send failed; queued for retry");
+        enqueueQueuedSms(String(queued.phone), String(queued.msg));
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        break;
+      }
     }
   }
 }
